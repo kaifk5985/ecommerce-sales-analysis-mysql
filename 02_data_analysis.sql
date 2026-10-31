@@ -1,196 +1,89 @@
-CREATE DATABASE ecommerce_db;
+-- E-Commerce Sales Analysis Using MySQL
+-- File: 02_data_analysis.sql
+-- Purpose: Business analysis queries only.
+-- Prerequisite: Run 01_database_setup.sql and 03_sample_data.sql
+-- on a fresh/empty database before running these queries.
+-- This file does NOT create tables or insert sample data.
+
 USE ecommerce_db;
 
+-- 1. View all customers
+SELECT *
+FROM customers;
 
-CREATE TABLE customers (
-    customer_id INT PRIMARY KEY AUTO_INCREMENT,
-    first_name VARCHAR(50) NOT NULL,
-    last_name VARCHAR(50) NOT NULL,
-    email VARCHAR(100) UNIQUE,
-    city VARCHAR(50),
-    registration_date DATE
-);
-
-
-INSERT INTO customers
-(first_name, last_name, email, city, registration_date)
-VALUES
-('Rahul', 'Sharma', 'rahul@gmail.com', 'Delhi', '2026-01-10'),
-('Aman', 'Kumar', 'aman@gmail.com', 'Mumbai', '2026-01-15'),
-('Priya', 'Singh', 'priya@gmail.com', 'Delhi', '2026-02-01'),
-('Neha', 'Verma', 'neha@gmail.com', 'Bhopal', '2026-02-10'),
-('Arjun', 'Patel', 'arjun@gmail.com', 'Jaipur', '2026-03-05'),
-('Sneha', 'Gupta', 'sneha@gmail.com', 'Mumbai', '2026-03-12'),
-('Rohit', 'Yadav', 'rohit@gmail.com', 'Patna', '2026-04-01'),
-('Anjali', 'Mishra', 'anjali@gmail.com', 'Bhopal', '2026-04-15'),
-('Vikas', 'Jain', 'vikas@gmail.com', 'Delhi', '2026-05-20'),
-('Pooja', 'Das', 'pooja@gmail.com', 'Patna', '2026-06-10');
-
-SELECT * FROM customers;
-
+-- 2. Total number of customers
 SELECT COUNT(*) AS total_customers
 FROM customers;
 
-CREATE TABLE products (
-    product_id INT PRIMARY KEY AUTO_INCREMENT,
-    product_name VARCHAR(100) NOT NULL,
-    category VARCHAR(50) NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    stock_quantity INT NOT NULL
-);
+-- 3. View all products
+SELECT *
+FROM products;
 
-INSERT INTO products
-(product_name, category, price, stock_quantity)
-VALUES
-('Laptop', 'Electronics', 55000.00, 15),
-('Smartphone', 'Electronics', 25000.00, 30),
-('Headphones', 'Electronics', 1500.00, 50),
-('T-Shirt', 'Clothing', 799.00, 100),
-('Jeans', 'Clothing', 1499.00, 60),
-('Running Shoes', 'Footwear', 2999.00, 40),
-('Wrist Watch', 'Accessories', 1999.00, 25),
-('Backpack', 'Accessories', 999.00, 35),
-('Office Chair', 'Furniture', 6500.00, 12),
-('Study Table', 'Furniture', 4500.00, 10);
-
-SELECT * FROM products;
-
+-- 4. Total number of products
 SELECT COUNT(*) AS total_products
 FROM products;
 
-CREATE TABLE orders (
-    order_id INT PRIMARY KEY AUTO_INCREMENT,
-    customer_id INT NOT NULL,
-    order_date DATE NOT NULL,
-    order_status VARCHAR(20) NOT NULL,
-    FOREIGN KEY (customer_id)
-        REFERENCES customers(customer_id)
-);
-INSERT INTO orders
-	(customer_id, order_date, order_status)
-VALUES
-(1, '2026-07-01', 'Delivered'),
-(2, '2026-07-02', 'Delivered'),
-(3, '2026-07-03', 'Pending'),
-(1, '2026-07-05', 'Delivered'),
-(4, '2026-07-06', 'Cancelled'),
-(5, '2026-07-08', 'Delivered'),
-(6, '2026-07-10', 'Pending'),
-(2, '2026-07-12', 'Delivered'),
-(7, '2026-07-15', 'Shipped'),
-(3, '2026-07-18', 'Delivered');
-
-SELECT * FROM orders;
-
+-- 5. View all orders with customer names
 SELECT
-    c.first_name,
-    c.last_name,
+    c.customer_id,
+    CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
     o.order_id,
     o.order_date,
     o.order_status
-FROM customers c
-INNER JOIN orders o
-    ON c.customer_id = o.customer_id;
-    
-CREATE TABLE order_items (
-    order_item_id INT PRIMARY KEY AUTO_INCREMENT,
-    order_id INT NOT NULL,
-    product_id INT NOT NULL,
-    quantity INT NOT NULL,
-    unit_price DECIMAL(10,2) NOT NULL,
-
-    FOREIGN KEY (order_id)
-        REFERENCES orders(order_id),
-
-    FOREIGN KEY (product_id)
-        REFERENCES products(product_id)
-);
-
-INSERT INTO order_items
-(order_id, product_id, quantity, unit_price)
-VALUES
-(1, 1, 1, 55000.00),
-(1, 3, 2, 1500.00),
-(2, 2, 1, 25000.00),
-(2, 4, 3, 799.00),
-(3, 5, 1, 1499.00),
-(4, 3, 1, 1500.00),
-(5, 9, 1, 6500.00),
-(6, 6, 2, 2999.00),
-(7, 7, 1, 1999.00),
-(8, 8, 2, 999.00),
-(9, 10, 1, 4500.00),
-(10, 2, 1, 25000.00);
-
-
-SELECT
-    order_id,
-    SUM(quantity * unit_price) AS order_total
-FROM order_items
-GROUP BY order_id
-ORDER BY order_id;
-
-SELECT
-    c.customer_id,
-    c.first_name,
-    c.last_name,
-    SUM(oi.quantity * oi.unit_price) AS total_spent
-FROM customers c
-INNER JOIN orders o
+FROM customers AS c
+JOIN orders AS o
     ON c.customer_id = o.customer_id
-INNER JOIN order_items oi
-    ON o.order_id = oi.order_id
-GROUP BY
-    c.customer_id,
-    c.first_name,
-    c.last_name
-ORDER BY total_spent DESC;
+ORDER BY o.order_date, o.order_id;
 
+-- 6. Total value of each order
+SELECT
+    oi.order_id,
+    SUM(oi.quantity * oi.unit_price) AS order_total
+FROM order_items AS oi
+GROUP BY oi.order_id
+ORDER BY order_total DESC;
+
+-- 7. Spending by customer across all order statuses
 SELECT
     c.customer_id,
-    c.first_name,
-    c.last_name,
-    SUM(oi.quantity * oi.unit_price) AS total_spent
-FROM customers c
-INNER JOIN orders o
+    CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+    SUM(oi.quantity * oi.unit_price) AS total_spending
+FROM customers AS c
+JOIN orders AS o
     ON c.customer_id = o.customer_id
-INNER JOIN order_items oi
+JOIN order_items AS oi
     ON o.order_id = oi.order_id
-GROUP BY
-    c.customer_id,
-    c.first_name,
-    c.last_name
-ORDER BY total_spent DESC;
+GROUP BY c.customer_id, c.first_name, c.last_name
+ORDER BY total_spending DESC;
 
+-- 8. Monthly revenue from delivered orders
 SELECT
     DATE_FORMAT(o.order_date, '%Y-%m') AS sales_month,
-    SUM(oi.quantity * oi.unit_price) AS total_sales,
-    COUNT(DISTINCT o.order_id) AS total_orders
-FROM orders o
-INNER JOIN order_items oi
+    SUM(oi.quantity * oi.unit_price) AS monthly_revenue,
+    COUNT(DISTINCT o.order_id) AS delivered_orders
+FROM orders AS o
+JOIN order_items AS oi
     ON o.order_id = oi.order_id
 WHERE o.order_status = 'Delivered'
 GROUP BY DATE_FORMAT(o.order_date, '%Y-%m')
 ORDER BY sales_month;
 
+-- 9. Top 5 customers by spending on delivered orders
 SELECT
     c.customer_id,
-    c.first_name,
-    c.last_name,
-    SUM(oi.quantity * oi.unit_price) AS total_spent
-FROM customers c
-INNER JOIN orders o
+    CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
+    SUM(oi.quantity * oi.unit_price) AS delivered_order_spending
+FROM customers AS c
+JOIN orders AS o
     ON c.customer_id = o.customer_id
-INNER JOIN order_items oi
+JOIN order_items AS oi
     ON o.order_id = oi.order_id
 WHERE o.order_status = 'Delivered'
-GROUP BY
-    c.customer_id,
-    c.first_name,
-    c.last_name
-ORDER BY total_spent DESC
+GROUP BY c.customer_id, c.first_name, c.last_name
+ORDER BY delivered_order_spending DESC
 LIMIT 5;
 
+-- 10. Count orders by status
 SELECT
     order_status,
     COUNT(*) AS total_orders
@@ -198,40 +91,40 @@ FROM orders
 GROUP BY order_status
 ORDER BY total_orders DESC;
 
-CREATE VIEW customer_sales AS
+-- 11. Create/update customer_sales view (delivered orders only)
+CREATE OR REPLACE VIEW customer_sales AS
 SELECT
     c.customer_id,
     c.first_name,
     c.last_name,
     SUM(oi.quantity * oi.unit_price) AS total_spent
-FROM customers c
-INNER JOIN orders o
+FROM customers AS c
+JOIN orders AS o
     ON c.customer_id = o.customer_id
-INNER JOIN order_items oi
+JOIN order_items AS oi
     ON o.order_id = oi.order_id
 WHERE o.order_status = 'Delivered'
-GROUP BY
-    c.customer_id,
-    c.first_name,
-    c.last_name;
-    
-SELECT * FROM customer_sales
+GROUP BY c.customer_id, c.first_name, c.last_name;
+
+-- 12. Use the customer_sales view
+SELECT *
+FROM customer_sales
 ORDER BY total_spent DESC;
 
+-- 13. Products priced above the average product price
 SELECT
     product_id,
     product_name,
     price
 FROM products
-WHERE price > (
-    SELECT AVG(price)
-    FROM products
-)
+WHERE price > (SELECT AVG(price) FROM products)
 ORDER BY price DESC;
 
-SELECT AVG(price)
+-- 14. Average product price
+SELECT AVG(price) AS average_product_price
 FROM products;
 
+-- 15. Categorize products by price
 SELECT
     product_name,
     price,
@@ -243,20 +136,17 @@ SELECT
 FROM products
 ORDER BY price DESC;
 
+-- 16. CTE: products priced above 5000
 WITH expensive_products AS (
     SELECT product_name, price
     FROM products
     WHERE price > 5000
 )
 SELECT *
-FROM expensive_products;
+FROM expensive_products
+ORDER BY price DESC;
 
-SELECT
-    product_name,
-    price,
-    RANK() OVER (ORDER BY price DESC) AS product_rank
-FROM products;
-
+-- 17. Rank products by price
 SELECT
     product_name,
     price,
@@ -265,47 +155,44 @@ SELECT
     DENSE_RANK() OVER (ORDER BY price DESC) AS dense_rank_num
 FROM products;
 
+-- 18. Data quality: duplicate non-null emails
 SELECT
     email,
     COUNT(*) AS total_records
 FROM customers
+WHERE email IS NOT NULL
 GROUP BY email
 HAVING COUNT(*) > 1;
 
+-- 19. Data quality: customers with missing emails
 SELECT *
 FROM customers
 WHERE email IS NULL;
 
+-- 20. Data quality: invalid product prices
 SELECT *
 FROM products
-WHERE price <= 0
-   OR price IS NULL;
-   
+WHERE price IS NULL OR price <= 0;
+
+-- 21. Data quality: order items with invalid quantity or price
+SELECT *
+FROM order_items
+WHERE quantity <= 0 OR unit_price <= 0;
+
+-- 22. Data quality: orders referencing missing customers
 SELECT
-    SUM(oi.quantity * oi.unit_price) AS total_revenue
-FROM order_items oi
-JOIN orders o
-    ON oi.order_id = o.order_id
-WHERE o.status = 'Delivered';
-
-USE ecommerce_db;
-
-USE ecommerce_db;
-
-SELECT
-    DATE_FORMAT(o.order_date, '%Y-%m') AS sales_month,
-    SUM(oi.quantity * oi.unit_price) AS monthly_revenue
+    o.order_id,
+    o.customer_id
 FROM orders AS o
-JOIN order_items AS oi
-    ON o.order_id = oi.order_id
-WHERE o.order_status = 'Delivered'
-GROUP BY DATE_FORMAT(o.order_date, '%Y-%m')
-ORDER BY sales_month;
+LEFT JOIN customers AS c
+    ON o.customer_id = c.customer_id
+WHERE c.customer_id IS NULL;
 
-DESCRIBE orders; 
-
+-- 23. Product performance: delivered sales by product
 SELECT
+    p.product_id,
     p.product_name,
+    p.category,
     SUM(oi.quantity) AS total_quantity_sold,
     SUM(oi.quantity * oi.unit_price) AS total_revenue
 FROM products AS p
@@ -314,36 +201,23 @@ JOIN order_items AS oi
 JOIN orders AS o
     ON oi.order_id = o.order_id
 WHERE o.order_status = 'Delivered'
-GROUP BY p.product_id, p.product_name
-ORDER BY total_quantity_sold DESC;
+GROUP BY p.product_id, p.product_name, p.category
+ORDER BY total_revenue DESC;
 
-USE ecommerce_db;
-
+-- 24. Monthly business performance for delivered orders
 SELECT
-    c.customer_id,
-    CONCAT(c.first_name, ' ', c.last_name) AS customer_name,
-    COALESCE(SUM(oi.quantity * oi.unit_price), 0) AS total_spending,
-    CASE
-        WHEN COALESCE(SUM(oi.quantity * oi.unit_price), 0) > 50000
-            THEN 'High Value'
-        WHEN COALESCE(SUM(oi.quantity * oi.unit_price), 0) >= 10000
-            THEN 'Medium Value'
-        ELSE 'Low Value'
-    END AS customer_segment
-FROM customers AS c
-LEFT JOIN orders AS o
-    ON c.customer_id = o.customer_id
-    AND o.order_status = 'Delivered'
-LEFT JOIN order_items AS oi
+    DATE_FORMAT(o.order_date, '%Y-%m') AS sales_month,
+    COUNT(DISTINCT o.order_id) AS total_orders,
+    COUNT(DISTINCT o.customer_id) AS unique_customers,
+    SUM(oi.quantity * oi.unit_price) AS monthly_revenue
+FROM orders AS o
+JOIN order_items AS oi
     ON o.order_id = oi.order_id
-GROUP BY c.customer_id, c.first_name, c.last_name
-ORDER BY total_spending DESC;
+WHERE o.order_status = 'Delivered'
+GROUP BY DATE_FORMAT(o.order_date, '%Y-%m')
+ORDER BY sales_month;
 
-
-DESCRIBE customers;
-
-USE ecommerce_db;
-
+-- 25. Customer segmentation based on delivered-order spending
 WITH customer_spending AS (
     SELECT
         c.customer_id,
@@ -369,8 +243,7 @@ SELECT
 FROM customer_spending
 ORDER BY total_spending DESC;
 
-USE ecommerce_db;
-
+-- 26. Top 3 customers by spending on delivered orders
 WITH customer_spending AS (
     SELECT
         c.customer_id,
@@ -382,168 +255,9 @@ WITH customer_spending AS (
     JOIN order_items AS oi
         ON o.order_id = oi.order_id
     WHERE o.order_status = 'Delivered'
-    GROUP BY
-        c.customer_id,
-        c.first_name,
-        c.last_name
+    GROUP BY c.customer_id, c.first_name, c.last_name
 )
-SELECT
-    customer_id,
-    customer_name,
-    total_spending
+SELECT customer_id, customer_name, total_spending
 FROM customer_spending
 ORDER BY total_spending DESC
 LIMIT 3;
-
-USE ecommerce_db;
-
-SELECT
-    p.product_id,
-    p.product_name,
-    p.category,
-    SUM(oi.quantity) AS total_quantity_sold,
-    SUM(oi.quantity * oi.unit_price) AS total_revenue
-FROM products AS p
-JOIN order_items AS oi
-    ON p.product_id = oi.product_id
-JOIN orders AS o
-    ON oi.order_id = o.order_id
-WHERE o.order_status = 'Delivered'
-GROUP BY
-    p.product_id,
-    p.product_name,
-    p.category
-ORDER BY total_revenue DESC;
-
-
-USE ecommerce_db;
-
-SELECT
-    order_status,
-    COUNT(order_id) AS total_orders
-FROM orders
-GROUP BY order_status
-ORDER BY total_orders DESC;
-
-USE ecommerce_db;
-
-SELECT
-    DATE_FORMAT(o.order_date, '%Y-%m') AS sales_month,
-    COUNT(DISTINCT o.order_id) AS total_orders,
-    COUNT(DISTINCT o.customer_id) AS unique_customers,
-    SUM(oi.quantity * oi.unit_price) AS monthly_revenue
-FROM orders AS o
-JOIN order_items AS oi
-    ON o.order_id = oi.order_id
-WHERE o.order_status = 'Delivered'
-GROUP BY DATE_FORMAT(o.order_date, '%Y-%m')
-ORDER BY sales_month;
-
-USE ecommerce_db;
-
-SELECT
-    email,
-    COUNT(*) AS total_count
-FROM customers
-WHERE email IS NOT NULL
-GROUP BY email
-HAVING COUNT(*) > 1;
-
-SELECT * FROM products
-WHERE price IS NULL
-   OR price <= 0;
-   
-   SELECT
-    o.order_id,
-    o.customer_id
-FROM orders AS o
-LEFT JOIN customers AS c
-    ON o.customer_id = c.customer_id
-WHERE c.customer_id IS NULL;
-
--- Level 28: Product Performance Analysis
-
-USE ecommerce_db;
-
-SELECT
-    p.product_id,
-    p.product_name,
-    p.category,
-    SUM(oi.quantity) AS total_quantity_sold,
-    SUM(oi.quantity * oi.unit_price) AS total_revenue
-FROM products AS p
-JOIN order_items AS oi
-    ON p.product_id = oi.product_id
-JOIN orders AS o
-    ON oi.order_id = o.order_id
-WHERE o.order_status = 'Delivered'
-GROUP BY
-    p.product_id,
-    p.product_name,
-    p.category
-ORDER BY total_revenue DESC;
-
--- Level 29: Order Status Analysis
-
-USE ecommerce_db;
-
-SELECT
-    order_status,
-    COUNT(*) AS total_orders
-FROM orders
-GROUP BY order_status
-ORDER BY total_orders DESC;
-
--- Level 30: Monthly Business Performance
-
-USE ecommerce_db;
-
-SELECT
-    DATE_FORMAT(o.order_date, '%Y-%m') AS sales_month,
-    COUNT(DISTINCT o.order_id) AS total_orders,
-    COUNT(DISTINCT o.customer_id) AS unique_customers,
-    SUM(oi.quantity * oi.unit_price) AS monthly_revenue
-FROM orders AS o
-JOIN order_items AS oi
-    ON o.order_id = oi.order_id
-WHERE o.order_status = 'Delivered'
-GROUP BY DATE_FORMAT(o.order_date, '%Y-%m')
-ORDER BY sales_month;
-
-
--- Level 31: Data Quality & Final Validation
-
--- Check 1: Duplicate Emails
-
-USE ecommerce_db;
-
-SELECT
-    email,
-    COUNT(*) AS total_records
-FROM customers
-WHERE email IS NOT NULL
-GROUP BY email
-HAVING COUNT(*) > 1;
-
--- Check 2: Missing Customer Emails
-
-SELECT *
-FROM customers
-WHERE email IS NULL;
-
--- Check 3: Invalid Product Prices
-
-SELECT *
-FROM products
-WHERE price <= 0;
-
--- Check 4: Invalid Order Item Quantities or Prices
-
-SELECT *
-FROM order_items
-WHERE quantity <= 0
-   OR unit_price <= 0;
-   
-   
-   
-   
