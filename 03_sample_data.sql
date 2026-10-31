@@ -1,4 +1,7 @@
-
+-- E-Commerce Sales Analysis Project
+-- Purpose: Insert sample data into ecommerce_db.
+-- IMPORTANT: Run only on a fresh database after 01_database_setup.sql.
+-- Do not rerun on a database that already contains data.
 USE ecommerce_db;
 
 INSERT INTO products
